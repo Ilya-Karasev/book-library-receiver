@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Listener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 700px;
+            overflow-y: scroll;
+            background-color: #f9f9f9;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        .log-event {
+            color: green;
+        }
+        .log-error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Listener</h1>
+    <div id="log"></div>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        const logContainer = document.getElementById('log');
+
+        function logEvent(message, type = 'event') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight; // Прокрутка вниз
+        }
+
+        const socket = new SockJS('http://localhost:8082/ws');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            logEvent('Connected to WebSocket server');
+
+            stompClient.subscribe('/topic/user', function(messageOutput) {
+                logEvent('Сообщение из user-queue: <' + messageOutput.body + '>');
+            });
+
+            stompClient.subscribe('/topic/book', function(messageOutput) {
+                logEvent('Сообщение из book-queue: <' + messageOutput.body + '>');
+            });
+
+            stompClient.subscribe('/topic/rental', function(messageOutput) {
+                logEvent('Сообщение из rental-queue: <' + messageOutput.body + '>');
+            });
+
+            stompClient.subscribe('/topic/reservation', function(messageOutput) {
+                logEvent('Сообщение из reservation-queue: <' + messageOutput.body + '>');
+            });
+        });
+
+        stompClient.onclose = function(event) {
+            logEvent('WebSocket connection closed', 'error');
+        };
+    </script>
+</body>
+</html>
